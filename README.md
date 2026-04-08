@@ -100,3 +100,124 @@
     height: 300px;
   }
 }
+2. 错误处理增强
+javascript
+// AI 生成的简单删除
+const handleDelete = (id) => {
+  workOrders.value = workOrders.value.filter(order => order.id !== id)
+}
+
+// 人工优化后（添加提示和边界处理）
+const handleDelete = (id) => {
+  const orderToDelete = workOrders.value.find(order => order.id === id)
+  if (orderToDelete) {
+    Modal.confirm({
+      title: '确认删除',
+      content: `确定要删除项目 "${orderToDelete.project}" 的工单吗？`,
+      onOk: () => {
+        workOrders.value = workOrders.value.filter(order => order.id !== id)
+        message.success('删除成功')
+        updateChart()
+      }
+    })
+  }
+}
+3. 图表联动优化
+javascript
+// AI 生成的简单更新
+watch(workOrders, () => {
+  updateChart()
+})
+
+// 人工优化后（防抖 + nextTick）
+import { debounce } from 'lodash-es'
+
+const debouncedUpdate = debounce(() => {
+  nextTick(() => {
+    updateChart()
+  })
+}, 100)
+
+watch(workOrders, () => {
+  debouncedUpdate()
+}, { deep: true })
+4. 权限控制完善
+vue
+<!-- AI 生成的简单权限 -->
+<a-button v-if="role === 'admin'" @click="handleDelete">删除</a-button>
+
+<!-- 人工优化后（添加更多权限判断） -->
+<a-button 
+  v-if="role === 'admin'" 
+  danger 
+  size="small"
+  :disabled="isDeleting"
+  @click="handleDelete(record.id)"
+>
+  {{ isDeleting ? '删除中...' : '删除' }}
+</a-button>
+⭐ 最难/最满意的部分
+最满意的部分：图表与表格的实时联动
+为什么最满意？
+
+数据一致性保障
+
+删除工单后，图表能实时反映最新的项目工时分布
+
+使用响应式数据驱动，避免了手动 DOM 操作
+
+性能优化
+
+实现了防抖处理，避免频繁重绘图表
+
+使用 nextTick 确保 DOM 更新完成后再渲染图表
+
+用户体验
+
+图表更新有平滑的过渡动画
+
+删除操作有确认提示，防止误删
+
+图表支持响应式布局
+
+核心代码片段：
+
+javascript
+// 计算各项目累计工时 - 自动聚合相同项目
+const calculateProjectHours = () => {
+  const projectMap = new Map()
+  
+  workOrders.value.forEach(order => {
+    const currentHours = projectMap.get(order.project) || 0
+    projectMap.set(order.project, currentHours + order.hours)
+  })
+  
+  return {
+    projects: Array.from(projectMap.keys()),
+    hours: Array.from(projectMap.values())
+  }
+}
+
+// 使用 watch 深度监听，自动触发图表更新
+watch(workOrders, () => {
+  debouncedUpdate() // 防抖更新
+}, { deep: true })
+最具挑战的部分：权限控制的边界处理
+挑战点：
+
+管理员和普通用户的界面差异控制
+
+删除按钮的显示与隐藏
+
+防止普通用户通过开发者工具绕过前端限制
+
+解决方案：
+
+前端做角色判断，虽然不能完全防止绕过，但满足需求文档要求
+
+添加了用户体验优化，不同角色看到不同的 UI 提示
+
+
+完成时间：2026-04-08
+开发者：[郭钰洁]
+项目时长：约 2 小时
